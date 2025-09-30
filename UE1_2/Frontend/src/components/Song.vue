@@ -1,8 +1,29 @@
 <script setup lang="ts">
 
-defineProps({
-  song : {}
-})
+import axios from "axios";
+import type {SongInterface} from "@/interfaces.ts";
+import router from "@/router";
+
+
+
+const props = defineProps<{ song: SongInterface }>();
+const emit = defineEmits(['deleted'])
+
+
+
+function deleteSong() {
+  if(props.song)
+  axios.delete('http://localhost:8080/api/songs/' + props.song.id)
+  .then(res => {
+    if(res.status === 204) {
+      emit("deleted")
+    }
+  })
+}
+
+function editSong() {
+  router.push('/add/' + props.song.id)
+}
 </script>
 
 <template>
@@ -13,6 +34,8 @@ defineProps({
       <p>{{song.length}}</p>
       <p>{{song.genre}}</p>
     </div>
+    <button type="button" @click="deleteSong">delete</button>
+    <button type="button" @click="editSong">edit</button>
 
   </div>
 </template>
@@ -86,5 +109,43 @@ defineProps({
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.2); }
+}
+
+button {
+  margin-top: 1rem;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 1.2rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff0000, #ff8800);
+  color: white;
+  text-transform: uppercase;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.6),
+  0 0 20px rgba(255, 136, 0, 0.6);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: btnPulse 1.5s infinite;
+}
+
+button:hover {
+  transform: scale(1.1) rotate(-3deg);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.9),
+  0 0 30px rgba(255, 136, 0, 0.9);
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+@keyframes btnPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: hue-rotate(45deg);
+  }
 }
 </style>
