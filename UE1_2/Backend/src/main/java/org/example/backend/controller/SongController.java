@@ -23,6 +23,10 @@ public class SongController {
     public List<Song> getAllSongs() {
         return this.repository.findAll();
     }
+    @GetMapping("/search/{search}")
+    public List<Song> searchSong(@PathVariable String search) {
+        return this.repository.findByTitleContainingIgnoreCaseOrArtistContainingIgnoreCase(search,search);
+    }
 
     @GetMapping("/{id}")
     public Song getSongById(@PathVariable long id) {
@@ -46,6 +50,8 @@ public class SongController {
         repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+
 
 
 }
