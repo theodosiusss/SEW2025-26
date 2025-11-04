@@ -17,20 +17,17 @@ watch(search, (newValue, odlValue) => {
   clearTimeout(timeoutId)
   if (newValue != odlValue) {
     if (newValue.length != 0) {
+      console.log(toggleError.value);
       timeoutId = setTimeout(() => {
             axios.get(`http://localhost:8080/api/songs/search/${search.value}`)
                 .then((res) => {
                   songs.value = res.data
-                  if (res.data.length === 0) {
-                    setTimeout(() => {
-                      toggleError.value = true;
-                    }, 900); // entspricht deiner CSS-Transitiondauer
-                  } else {
-                    toggleError.value = false;
-                  }                })
+
+                  toggleError.value = res.data.length === 0;                })
           }
           , 300)
     }else {
+      toggleError.value = false;
       timeoutId = setTimeout(fetchData, 500)
     }
   }
@@ -54,8 +51,9 @@ function fetchData() {
   <div>
     <label for="search">Songs Suchen</label>
     <input v-model="search" name="search" placeholder="Buscar"/>
+    <Transition name="song-fade" >
     <p class="error-msg" v-if="toggleError">Es konnte kein Song gefunden werden, bitte passen Sie Ihre Suche an</p>
-
+    </Transition>
   </div>
 
   <div v-if="songs" class="songs">
@@ -81,9 +79,13 @@ function fetchData() {
 }
 
 /* Sanfte Neon-Fade-Transition */
-.song-fade-enter-active,
+.song-fade-enter-active {
+  transition: all 3s ease-in;
+}
+
+/* Ausblenden: schneller (0.4s) */
 .song-fade-leave-active {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .song-fade-enter-from,
