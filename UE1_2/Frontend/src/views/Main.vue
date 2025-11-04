@@ -80,7 +80,7 @@ function fetchData() {
 
 /* Sanfte Neon-Fade-Transition */
 .song-fade-enter-active {
-  transition: all 3s ease-in;
+  transition: all 3s ease-in                                              ;
 }
 
 /* Ausblenden: schneller (0.4s) */
