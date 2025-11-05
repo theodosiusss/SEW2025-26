@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import Main from "@/views/Main.vue";
 import Form from "@/views/Form.vue";
+import ArtistForm from "@/views/ArtistForm.vue";
+import Artists from "@/views/Artists.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +24,16 @@ const router = createRouter({
             name: 'add',
             component: Form,
             props: true,
+        },
+        {
+            path: '/addArtist',
+            name: 'addArtist',
+            component: ArtistForm,
+        },
+        {
+            path: '/artists',
+            name: 'artists',
+            component: Artists,
         },
     ],
 })

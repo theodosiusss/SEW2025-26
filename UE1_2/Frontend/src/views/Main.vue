@@ -2,8 +2,9 @@
 import axios from 'axios';
 import {onMounted, ref, watch} from "vue";
 import Song from "@/components/Song.vue";
+import type {SongInterface} from "@/interfaces.ts";
 
-const songs = ref({});
+const songs = ref<Array<SongInterface>>([]);
 const search = ref("");
 const toggleError = ref(false);
 
@@ -47,6 +48,7 @@ function fetchData() {
 
 <template>
   <RouterLink to="/add">Neue Songs Hinzufügen</RouterLink>
+  <RouterLink to="/artists">Künstler*innen Übersicht</RouterLink>
 
   <div>
     <label for="search">Songs Suchen</label>

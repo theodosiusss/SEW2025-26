@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref, useTemplateRef} from "vue";
 import axios from "axios";
-import type {SongInterface} from "@/interfaces.ts";
+import type {ArtistInterface, SongInterface} from "@/interfaces.ts";
 import router from "@/router";
 
 const props = defineProps<{ id?: String}>();
@@ -15,16 +15,21 @@ function resetMessages(): void {
   isError.value = false;
   isSuccessful.value = false;
 }
-
+const artists = ref<Array<ArtistInterface>>([]);
 
 const name = ref("");
-const artist = ref("");
+const artist = ref<Number|null>(null);
 const genre = ref("");
 const length = ref("");
 
 const song = ref<SongInterface | undefined>(undefined);
 
 onMounted(() => {
+
+  axios.get("http://localhost:8080/api/artists").then((res) => {
+    artists.value = res.data;
+  })
+
   if(props.id) {
     axios.get(`http://localhost:8080/api/songs/${props.id}`).then((res) => {
       song.value = res.data;
@@ -33,7 +38,7 @@ onMounted(() => {
 
       if(song.value) {
         name.value= song.value.title;
-        artist.value= song.value.artist;
+        artist.value= song.value.artist?.id;
         genre.value= song.value.genre;
         length.value= song.value.length;
       }
@@ -63,7 +68,9 @@ function handleSubmit() {
 if(song.value){
   axios.put("http://localhost:8080/api/songs/"+song.value.id, {
     "title": name.value,
-    "artist": artist.value,
+    "artist": {
+      "id": artist.value,
+    },
     "genre": genre.value,
     "length": length.value,
   }, {headers: {"Content-Type": "application/json"}}).then((res) => {
@@ -85,7 +92,9 @@ if(song.value){
 } else {
   axios.post("http://localhost:8080/api/songs", {
     "title": name.value,
-    "artist": artist.value,
+    "artist": {
+      "id" : artist.value,
+    } ,
     "genre": genre.value,
     "length": length.value,
   }, {headers: {"Content-Type": "application/json"}}).then((res) => {
@@ -97,7 +106,7 @@ if(song.value){
       name.value = "";
       genre.value = "";
       length.value = "";
-      artist.value = "";
+      artist.value = null;
 
     } else {
       isError.value = true;
@@ -127,8 +136,24 @@ if(song.value){
 
         <label>
           Künstler
-          <input required type="text" v-model="artist" @focus="resetMessages" placeholder="z. B. Queen"/>
+          <select
+              required
+              @focus="resetMessages"
+              name="artist"
+              id="artist"
+              v-model="artist"
+          >
+            <option  disabled value="null">-- Bitte Künstler wählen --</option>
+            <option
+                v-for="a in artists"
+                :key="a.id"
+                :value="a.id"
+            >
+              {{ a.name }}
+            </option>
+          </select>
         </label>
+
 
         <label>
           Genre

@@ -1,8 +1,6 @@
 package org.example.backend.model;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
 
 @Entity
 public class Song {
@@ -11,9 +9,11 @@ public class Song {
     private Long id;
 
     private String title;
-    private String artist;
     private String genre;
     private String length;
+
+    @ManyToOne (fetch = FetchType.EAGER)
+    private Artist artist;
 
     public void setId(Long id) {
         this.id = id;
@@ -31,11 +31,11 @@ public class Song {
         this.title = title;
     }
 
-    public String getArtist() {
+    public Artist getArtist() {
         return artist;
     }
 
-    public void setArtist(String artist) {
+    public void setArtist(Artist artist) {
         this.artist = artist;
     }
 

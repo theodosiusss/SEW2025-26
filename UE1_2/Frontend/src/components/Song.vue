@@ -29,7 +29,7 @@ function editSong() {
 <template>
   <div class="song">
     <h1>{{ song.title }}</h1>
-    <h2>{{ song.artist }}</h2>
+    <h2>{{ song.artist?.name }}</h2>
     <div>
       <p>{{song.length}}</p>
       <p>{{song.genre}}</p>
