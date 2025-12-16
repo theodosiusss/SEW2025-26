@@ -1,5 +1,6 @@
 package org.example.backend.controller;
 
+import jakarta.validation.Valid;
 import org.example.backend.model.Artist;
 import org.example.backend.repository.ArtistRepository;
 import org.example.backend.repository.SongRepository;
@@ -27,12 +28,12 @@ public class ArtistController {
         return this.repository.findById(id).orElseThrow();
     }
     @PostMapping
-    public Artist saveArtist(@RequestBody Artist artist) {
+    public Artist saveArtist(@Valid @RequestBody Artist artist) {
         artist.setId(null);
         return this.repository.save(artist);
     }
     @PutMapping("/{id}")
-    public Artist updateArtist(@PathVariable Long id,@RequestBody Artist artist) {
+    public Artist updateArtist(@PathVariable Long id, @Valid @RequestBody Artist artist) {
         Artist existingArtist = repository.findById(id).orElseThrow();
         existingArtist.setName(artist.getName());
         return repository.save(existingArtist);

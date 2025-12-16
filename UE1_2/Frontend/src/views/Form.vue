@@ -1,28 +1,44 @@
 <script setup lang="ts">
-import {onMounted, ref, useTemplateRef} from "vue";
+import {onMounted, reactive, ref, useTemplateRef} from "vue";
 import axios from "axios";
 import type {ArtistInterface, SongInterface} from "@/interfaces.ts";
 import router from "@/router";
+import {required} from "@vuelidate/validators";
+import useVuelidate from "@vuelidate/core";
 
-const props = defineProps<{ id?: String}>();
+const props = defineProps<{ id?: String }>();
 const changeButton = useTemplateRef('changeButton');
 
 
 const isError = ref(false);
 const isSuccessful = ref(false);
 
+
+
+const artists = ref<Array<ArtistInterface>>([]);
+const song = ref<SongInterface | undefined>(undefined);
+
+const matchLength = (value: string) =>
+    /^[0-9]{1,2}:[0-5][0-9]$/.test(value);
+
+const state = reactive({
+  name: '',
+  artist: null as number | null,
+  genre: '',
+  length: '',
+})
+
+const rules = {
+  name: {required},
+  artist: {required},
+  genre: {required},
+  length: {required,matchLength}
+}
+const v$ = useVuelidate(rules, state);
 function resetMessages(): void {
   isError.value = false;
   isSuccessful.value = false;
 }
-const artists = ref<Array<ArtistInterface>>([]);
-
-const name = ref("");
-const artist = ref<Number|null>(null);
-const genre = ref("");
-const length = ref("");
-
-const song = ref<SongInterface | undefined>(undefined);
 
 onMounted(() => {
 
@@ -30,94 +46,100 @@ onMounted(() => {
     artists.value = res.data;
   })
 
-  if(props.id) {
+  if (props.id) {
     axios.get(`http://localhost:8080/api/songs/${props.id}`).then((res) => {
       song.value = res.data;
       console.log(res.data);
       console.log(song.value);
 
-      if(song.value) {
-        name.value= song.value.title;
-        artist.value= song.value.artist?.id;
-        genre.value= song.value.genre;
-        length.value= song.value.length;
+      if (song.value) {
+        state.name = song.value.title;
+        state.artist = song.value.artist?.id;
+        state.genre = song.value.genre;
+        state.length = song.value.length;
       }
     }).catch((err) => {
-      if(changeButton.value) {
-        changeButton.value.style.display ="none";
+      if (changeButton.value) {
+        changeButton.value.style.display = "none";
       }
       alert(err);
-      setTimeout(()=> {
+      setTimeout(() => {
         router.push("/")
 
-      },500)
+      }, 500)
     })
 
   }
 })
 
 
-function handleSubmit() {
-  if (!name.value || !artist.value || !genre.value || !length.value) {
+async function handleSubmit() {
+  const isValid = await v$.value.$validate();
+
+  if (!isValid) {
     isError.value = true;
     isSuccessful.value = false;
     return;
   }
 
 
-if(song.value){
-  axios.put("http://localhost:8080/api/songs/"+song.value.id, {
-    "title": name.value,
-    "artist": {
-      "id": artist.value,
-    },
-    "genre": genre.value,
-    "length": length.value,
-  }, {headers: {"Content-Type": "application/json"}}).then((res) => {
-    if (res.status === 200) {
-      console.log(res.data);
-      isSuccessful.value = true;
-      if(changeButton.value) {
-        changeButton.value.style.display ="none";
+  if (song.value) {
+    axios.put("http://localhost:8080/api/songs/" + song.value.id, {
+      "title": state.name,
+      "artist": {
+        "id": state.artist,
+      },
+      "genre": state.genre,
+      "length": state.length,
+    }, {headers: {"Content-Type": "application/json"}}).then((res) => {
+      if (res.status === 200) {
+        console.log(res.data);
+        isSuccessful.value = true;
+        if (changeButton.value) {
+          changeButton.value.style.display = "none";
+        }
+        setTimeout(() => {
+          router.push('/');
+        }, 500)
+
+      } else {
+        isError.value = true;
+        alert(res.data);
       }
-     setTimeout(() => {
-       router.push('/');
-     },500)
+    });
 
-    } else {
+  } else {
+    axios.post("http://localhost:8080/api/songs", {
+      "title": state.name,
+      "artist": {
+        "id": state.artist,
+      },
+      "genre": state.genre,
+      "length": state.length,
+    }, {headers: {"Content-Type": "application/json"}}).then((res) => {
+
+
+      if (res.status === 200) {
+        console.log(res.data);
+        isSuccessful.value = true;
+        state.name = "";
+        state.genre = "";
+        state.length = "";
+        state.artist = null;
+        v$.value.$reset();
+
+      } else {
+        isError.value = true;
+      }
+    }).catch((err) => {
+      alert(err);
       isError.value = true;
-    }
-  });
-
-} else {
-  axios.post("http://localhost:8080/api/songs", {
-    "title": name.value,
-    "artist": {
-      "id" : artist.value,
-    } ,
-    "genre": genre.value,
-    "length": length.value,
-  }, {headers: {"Content-Type": "application/json"}}).then((res) => {
-
-
-    if (res.status === 200) {
-      console.log(res.data);
-      isSuccessful.value = true;
-      name.value = "";
-      genre.value = "";
-      length.value = "";
-      artist.value = null;
-
-    } else {
-      isError.value = true;
-    }
-  });
-}
+    });
+  }
 
 }
 
 </script>
-
 <template>
   <!-- Erfolgsmeldung -->
   <p v-if="isSuccessful" class="success-msg">✅ Song erfolgreich gespeichert!</p>
@@ -128,22 +150,37 @@ if(song.value){
   <div class="page">
     <div class="form-container">
       <h1 class="title">🎶 Neuen Song hinzufügen</h1>
+
       <form class="song-form" @submit.prevent>
+
+        <!-- Titel -->
         <label>
           Titel
-          <input required type="text" v-model="name" @focus="resetMessages" placeholder="z. B. Bohemian Rhapsody"/>
+          <input
+              required
+              type="text"
+              v-model="state.name"
+              @focus="resetMessages"
+              @blur="v$.name.$touch"
+              placeholder="z. B. Bohemian Rhapsody"
+          />
+          <p v-if="v$.name.$error" class="validation-error">
+            Titel ist erforderlich.
+          </p>
         </label>
 
+        <!-- Künstler -->
         <label>
           Künstler
           <select
               required
+              v-model="state.artist"
               @focus="resetMessages"
+              @blur="v$.artist.$touch"
               name="artist"
               id="artist"
-              v-model="artist"
           >
-            <option  disabled value="null">-- Bitte Künstler wählen --</option>
+            <option disabled :value="null">-- Bitte Künstler wählen --</option>
             <option
                 v-for="a in artists"
                 :key="a.id"
@@ -152,30 +189,79 @@ if(song.value){
               {{ a.name }}
             </option>
           </select>
+
+          <p v-if="v$.artist.$error" class="validation-error">
+            Bitte wähle einen Künstler aus.
+          </p>
         </label>
 
-
+        <!-- Genre -->
         <label>
           Genre
-          <input required type="text" v-model="genre" @focus="resetMessages" placeholder="z. B. Rock"/>
+          <input
+              required
+              type="text"
+              v-model="state.genre"
+              @focus="resetMessages"
+              @blur="v$.genre.$touch"
+              placeholder="z. B. Rock"
+          />
+          <p v-if="v$.genre.$error" class="validation-error">
+            Genre ist erforderlich.
+          </p>
         </label>
 
+        <!-- Länge -->
         <label>
           Länge
-          <input required type="text" v-model="length" @focus="resetMessages" placeholder="z. B. 5:55"/>
+          <input
+              required
+              type="text"
+              v-model="state.length"
+              @focus="resetMessages"
+              @blur="v$.length.$touch"
+              placeholder="z. B. 5:55"
+          />
+
+          <!-- 2 mögliche Fehler: required + matchLength -->
+          <p v-if="v$.length.$error" class="validation-error">
+            <span v-if="v$.length.required?.$invalid">
+              Länge ist erforderlich.
+            </span>
+            <span v-else-if="v$.length.matchLength?.$invalid">
+              Länge muss im Format mm:ss sein.
+            </span>
+          </p>
         </label>
 
-        <button v-if="!props.id" type="button" @click="handleSubmit">➕ Song speichern</button>
-        <button v-else ref="changeButton" type="button" @click="handleSubmit">➕ Änderungen speichern</button>
+        <!-- Buttons -->
+        <button
+            v-if="!props.id"
+            :disabled="v$.$invalid"
+            type="button"
+            @click="handleSubmit"
+        >
+          ➕ Song speichern
+        </button>
+
+        <button
+            v-else
+            ref="changeButton"
+            :disabled="v$.$invalid"
+            type="button"
+            @click="handleSubmit"
+        >
+          ➕ Änderungen speichern
+        </button>
       </form>
     </div>
-    <RouterLink class="link" to="/">Zurück</RouterLink>
 
+    <RouterLink class="link" to="/">Zurück</RouterLink>
   </div>
 </template>
 
 <style scoped>
-.link{
+.link {
   background-color: white;
   padding: 10px 40px 10px 40px;
   border-radius: 5px;
@@ -190,6 +276,7 @@ if(song.value){
   align-items: center;
 
 }
+
 .success-msg {
   background: #d4edda;
   color: #155724;
@@ -271,4 +358,10 @@ button:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 6px 15px rgba(0, 255, 255, 0.5);
 }
+.validation-error {
+  color: #d9534f;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
 </style>

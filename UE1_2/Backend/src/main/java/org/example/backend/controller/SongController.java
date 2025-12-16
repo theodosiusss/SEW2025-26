@@ -1,5 +1,6 @@
 package org.example.backend.controller;
 
+import jakarta.validation.Valid;
 import org.example.backend.model.Song;
 import org.example.backend.repository.SongRepository;
 import org.springframework.http.ResponseEntity;
@@ -33,12 +34,12 @@ public class SongController {
         return this.repository.findById(id).orElseThrow();
     }
     @PostMapping
-    public Song addSong(@RequestBody Song song) {
+    public Song addSong(@Valid  @RequestBody Song song) {
         song.setId(null);
         return this.repository.save(song);
     }
     @PutMapping("/{id}")
-    public Song changeSong(@PathVariable Long id, @RequestBody Song song) {
+    public Song changeSong(@PathVariable Long id, @Valid @RequestBody Song song) {
         song.setId(id);
         return this.repository.save(song);
     }

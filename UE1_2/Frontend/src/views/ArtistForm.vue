@@ -1,31 +1,46 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import {reactive, ref} from "vue";
 import axios from "axios";
 import Form from "@/views/Form.vue";
+import {alphaNum, required} from "@vuelidate/validators";
+import useVuelidate from "@vuelidate/core";
 
-const name = ref("");
+const state = reactive({
+  name: '',
+})
+
+const rules = {
+  name: {required},
+}
+
+const v$ = useVuelidate(rules, state);
+
+
 const isError = ref(false);
 const isSuccessful = ref(false);
 
 function resetMessages(): void {
   isError.value = false;
   isSuccessful.value = false;
+  v$.value.$reset();
 }
 
 function handleSubmit() {
-  if (!name.value) {
+  v$.value.$validate();
+  if (v$.value.$error) {
     isError.value = true;
     isSuccessful.value = false;
     return;
   }
   axios.post("http://localhost:8080/api/artists", {
-    "name": name.value,
+    "name": state.name,
   }, {headers: {"Content-Type": "application/json"}}).then((res) => {
 
     if (res.status === 200) {
       console.log(res.data);
       isSuccessful.value = true;
-      name.value = "";
+      v$.value.$reset();
+      state.name = "";
     } else {
       isError.value = true;
     }
@@ -45,12 +60,12 @@ function handleSubmit() {
     <div class="form-container">
       <h1 class="title">🎶 Neuen Künster hinzufügen</h1>
       <form class="song-form" @submit.prevent>
-        <label>
-          Name
-          <input required type="text" v-model="name" @focus="resetMessages" placeholder="z. B. Christian Steiffen"/>
-        </label>
-
-        <button type="button" @click="handleSubmit">➕ Künstler speichern</button>
+        <label>Name</label>
+        <input v-model="state.name" @focus="resetMessages" @blur="v$.name.$touch"/>
+        <p class="error-text-wrapper">
+          <span v-if="v$.name.$error" class="error-text">Fehler beim Namen</span>
+        </p>
+        <button :disabled="v$.$invalid" type="button" @click="handleSubmit">➕ Künstler speichern</button>
       </form>
     </div>
     <RouterLink class="link" to="/artists">Zurück</RouterLink>
@@ -60,7 +75,17 @@ function handleSubmit() {
 
 
 <style scoped>
-.link{
+.error-text-wrapper {
+  min-height: 22px; /* genug Platz für 1 Zeile Fehlertext */
+}
+
+.error-text {
+  color: #d9534f;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.link {
   background-color: white;
   padding: 10px 40px 10px 40px;
   border-radius: 5px;
@@ -75,6 +100,7 @@ function handleSubmit() {
   align-items: center;
 
 }
+
 .success-msg {
   background: #d4edda;
   color: #155724;

@@ -1,12 +1,21 @@
 <script setup lang="ts">
 
-import {onMounted, ref} from "vue";
+import {onMounted, reactive, ref} from "vue";
 import type {ArtistInterface} from "@/interfaces.ts";
 import axios from "axios";
+import {alphaNum, required} from "@vuelidate/validators";
+import useVuelidate from "@vuelidate/core";
 
 const artists = ref<Array<ArtistInterface>>([]);
 const editingArtistId = ref<number | null>(null);
-const editedName = ref<string>("");
+const state = reactive({
+  editedName: '',
+})
+
+const rules = {
+  editedName: {required},
+}
+const v$ = useVuelidate(rules, state);
 
 
 onMounted(() => {
@@ -23,19 +32,22 @@ function fetchArtists() {
 
 function startEditing(artist: ArtistInterface) {
   editingArtistId.value = artist.id;
-  editedName.value = artist.name;
+  state.editedName = artist.name;
+  v$.value.$reset();
 }
 
 function saveEdit(artist: ArtistInterface) {
+  const isValid = v$.value.$validate();
+  if (!isValid) return;
   axios
       .put(`http://localhost:8080/api/artists/${artist.id}`, {
         id: artist.id,
-        name: editedName.value,
+        name: state.editedName,
       })
       .then((res) => {
         artist.name = res.data.name;
         editingArtistId.value = null;
-        editedName.value = "";
+        state.editedName = artist.name; "";
       })
       .catch((err) => {
         console.error(err);
@@ -43,7 +55,8 @@ function saveEdit(artist: ArtistInterface) {
 }
 function cancelEdit() {
   editingArtistId.value = null;
-  editedName.value = "";
+  state.editedName = "";
+  v$.value.$reset();
 }
 
 function deleteArtist(artist: ArtistInterface) {
@@ -63,8 +76,9 @@ function deleteArtist(artist: ArtistInterface) {
 
   <div v-if="artists" v-for="artist in artists" :key="artist.id" class="artist-card">
     <div v-if="editingArtistId === artist.id">
-      <input v-model="editedName" placeholder="Neuer Name" />
-      <button @click="saveEdit(artist)">💾 Speichern</button>
+      <input v-model="state.editedName" placeholder="Neuer Name" @blur="v$.editedName.$touch"/>
+      <span v-if="v$.editedName.$error" class="error-text">Fehler beim Namen</span>
+      <button :disabled="v$.$invalid" @click="saveEdit(artist)">💾 Speichern</button>
       <button @click="deleteArtist(artist)">🗑️ Löschen</button>
       <button @click="cancelEdit">❌ Abbrechen</button>
     </div>
