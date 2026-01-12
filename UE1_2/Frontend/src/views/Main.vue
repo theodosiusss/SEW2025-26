@@ -8,6 +8,9 @@ const songs = ref<Array<SongInterface>>([]);
 const search = ref("");
 const toggleError = ref(false);
 
+const currentPage = ref(0);
+const maxPage = ref(67);
+const minPage = ref(0);
 onMounted(async () => {
   fetchData();
 })
@@ -18,17 +21,13 @@ watch(search, (newValue, odlValue) => {
   clearTimeout(timeoutId)
   if (newValue != odlValue) {
     if (newValue.length != 0) {
-      console.log(toggleError.value);
       timeoutId = setTimeout(() => {
-            axios.get(`http://localhost:8080/api/songs/search/${search.value}`)
-                .then((res) => {
-                  songs.value = res.data
-
-                  toggleError.value = res.data.length === 0;                })
+           fetchSearch(true);
           }
           , 300)
     }else {
       toggleError.value = false;
+      currentPage.value = 0;
       timeoutId = setTimeout(fetchData, 500)
     }
   }
@@ -36,13 +35,39 @@ watch(search, (newValue, odlValue) => {
 
 })
 
+function fetchSearch(newSearch: boolean){
+  if(newSearch) {
+    currentPage.value = 0;
+  }
+  axios.get(`http://localhost:8080/api/songs/search/${search.value}?page=${currentPage.value}&size=5`)
+      .then((res) => {
+        songs.value = res.data.content
+        if(res.data.totalPages !== 0){
+          maxPage.value = res.data.totalPages-1;
+        }else{
+          maxPage.value = res.data.totalPages;
+        }
+        currentPage.value = res.data.pageable.pageNumber;
+        toggleError.value = res.data.length === 0;                })
 
+}
 function fetchData() {
   toggleError.value = false;
-  axios.get("http://localhost:8080/api/songs").then(response => {
-    songs.value = response.data;
+  axios.get(`http://localhost:8080/api/songs?page=${currentPage.value}&size=5`).then(response => {
+    songs.value = response.data.content;
+    maxPage.value = response.data.totalPages-1;
+    currentPage.value = response.data.pageable.pageNumber;
   });
 }
+
+watch(currentPage, () => {
+  if (search.value.length === 0) {
+    fetchData();
+  }else{
+    fetchSearch(false);
+  }
+});
+
 
 </script>
 
@@ -56,6 +81,44 @@ function fetchData() {
     <Transition name="song-fade" >
     <p class="error-msg" v-if="toggleError">Es konnte kein Song gefunden werden, bitte passen Sie Ihre Suche an</p>
     </Transition>
+  </div>
+
+  <div class="goofy-pagination">
+    <button
+        class="page-btn"
+        :disabled="currentPage === minPage"
+        @click="currentPage = minPage"
+    >
+      ⏮
+    </button>
+
+    <button
+        class="page-btn"
+        :disabled="currentPage === minPage"
+        @click="currentPage--"
+    >
+      ◀
+    </button>
+
+    <span class="page-indicator">
+    {{ currentPage + 1 }} / {{ maxPage + 1 }}
+  </span>
+
+    <button
+        class="page-btn"
+        :disabled="currentPage === maxPage"
+        @click="currentPage++"
+    >
+      ▶
+    </button>
+
+    <button
+        class="page-btn"
+        :disabled="currentPage === maxPage"
+        @click="currentPage = maxPage"
+    >
+      ⏭
+    </button>
   </div>
 
   <div v-if="songs" class="songs">
@@ -268,5 +331,148 @@ label {
     transform: translateX(-2px) rotate(0.5deg);
   }
 }
+/* 🌀 Goofy Pagination Container */
+.goofy-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  animation: paginationFloat 3s infinite ease-in-out;
+}
+
+/* 🔮 Page Buttons */
+.page-btn {
+  padding: 0.6rem 1rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+
+  background:
+      linear-gradient(135deg, #111, #222) padding-box,
+      linear-gradient(135deg, #00ffff, #ff00ff, #ffff00) border-box;
+
+  color: #fff;
+  box-shadow:
+      0 0 12px rgba(255, 0, 255, 0.6),
+      0 0 20px rgba(0, 255, 255, 0.6);
+
+  transition: all 0.25s ease;
+}
+
+/* Hover = Chaos */
+.page-btn:hover:not(:disabled) {
+  transform: scale(1.25) rotate(-8deg);
+  box-shadow:
+      0 0 18px rgba(255, 255, 0, 0.9),
+      0 0 30px rgba(0, 255, 255, 0.9);
+}
+
+/* Click */
+.page-btn:active:not(:disabled) {
+  transform: scale(0.9) rotate(5deg);
+}
+
+/* Disabled = kaputt & traurig */
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(1) blur(0.5px);
+  box-shadow: none;
+}
+
+/* 📟 Page Indicator */
+.page-indicator {
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0.5rem 1.2rem;
+  border-radius: 1.5rem;
+  text-transform: uppercase;
+
+  background: linear-gradient(
+      90deg,
+      #ff00ff,
+      #ffff00,
+      #00ffff,
+      #ff00ff
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  animation: pageGlow 3s infinite linear;
+  text-shadow:
+      0 0 10px rgba(255, 255, 0, 0.8),
+      0 0 20px rgba(0, 255, 255, 0.6);
+}
+
+/* ✨ Animations */
+@keyframes paginationFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pageGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+/* 🌀 Permanente Rotation */
+.page-btn {
+  animation: slowSpin 6s linear infinite;
+}
+
+/* Unterschiedliche Richtungen für mehr Chaos */
+.page-btn:nth-child(1),
+.page-btn:nth-child(5) {
+  animation-direction: normal;
+}
+
+.page-btn:nth-child(2),
+.page-btn:nth-child(4) {
+  animation-direction: reverse;
+}
+
+/* Hover = Turbo-Modus */
+.page-btn:hover:not(:disabled) {
+  animation: fastSpin 0.8s linear infinite;
+}
+
+/* Disabled = eingefroren */
+.page-btn:disabled {
+  animation-play-state: paused;
+}
+
+/* 🌀 Keyframes */
+@keyframes slowSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fastSpin {
+  from {
+    transform: rotate(0deg) scale(1.2);
+  }
+  to {
+    transform: rotate(-360deg) scale(1.2);
+  }
+}
+
 </style>
 
