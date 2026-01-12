@@ -3,9 +3,11 @@ package org.example.backend.controller;
 import jakarta.validation.Valid;
 import org.example.backend.model.Song;
 import org.example.backend.repository.SongRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,12 +23,12 @@ public class SongController {
     }
 
     @GetMapping
-    public List<Song> getAllSongs() {
-        return this.repository.findAll();
+    public Page<Song> getAllSongs(Pageable pageable) {
+        return this.repository.findAll(pageable);
     }
     @GetMapping("/search/{search}")
-    public List<Song> searchSong(@PathVariable String search) {
-        return this.repository.findByTitleContainingIgnoreCaseOrArtist_NameContainingIgnoreCase(search,search);
+    public Page<Song> searchSong(@PathVariable String search, Pageable pageable) {
+        return this.repository.findByTitleContainingIgnoreCaseOrArtist_NameContainingIgnoreCase(search,search,pageable);
     }
 
     @GetMapping("/{id}")
