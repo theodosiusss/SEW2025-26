@@ -1,5 +1,6 @@
 package org.example.backend.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -23,6 +24,12 @@ public class Song {
 
     @ManyToOne (fetch = FetchType.EAGER)
     private Artist artist;
+
+
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    @JsonIgnore
+    private String musicDataUrl;
 
     public void setId(Long id) {
         this.id = id;
@@ -63,4 +70,13 @@ public class Song {
     public void setLength(String length) {
         this.length = length;
     }
+
+    public String getMusicDataUrl() {
+        return musicDataUrl;
+    }
+
+    public void setMusicDataUrl(String musicDataUrl) {
+        this.musicDataUrl = musicDataUrl;
+    }
+
 }

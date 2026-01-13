@@ -4,6 +4,7 @@ import Main from "@/views/Main.vue";
 import Form from "@/views/Form.vue";
 import ArtistForm from "@/views/ArtistForm.vue";
 import Artists from "@/views/Artists.vue";
+import SongDetail from "@/views/SongDetail.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,12 @@ const router = createRouter({
             path: '/artists',
             name: 'artists',
             component: Artists,
+        },
+        {
+            path: '/song-detail/:id',
+            name: 'songDetail',
+            component: SongDetail,
+            props: true,
         },
     ],
 })

@@ -28,7 +28,7 @@ function editSong() {
 
 <template>
   <div class="song">
-    <h1>{{ song.title }}</h1>
+    <h1 @click="router.push('song-detail/'+song.id)">{{ song.title }}</h1>
     <h2>{{ song.artist?.name }}</h2>
     <div>
       <p>{{song.length}}</p>

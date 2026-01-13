@@ -18,6 +18,7 @@ const isSuccessful = ref(false);
 const artists = ref<Array<ArtistInterface>>([]);
 const song = ref<SongInterface | undefined>(undefined);
 
+
 const matchLength = (value: string) =>
     /^[0-9]{1,2}:[0-5][0-9]$/.test(value);
 
@@ -26,6 +27,7 @@ const state = reactive({
   artist: null as number | null,
   genre: '',
   length: '',
+  file: null as File | null
 })
 
 const rules = {
@@ -81,17 +83,35 @@ async function handleSubmit() {
     isSuccessful.value = false;
     return;
   }
+  if (!song.value && !state.file) {
+    isError.value = true;
+    alert("Bitte eine Musikdatei auswählen");
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append(
+      "song",
+      new Blob(
+          [JSON.stringify({
+            title: state.name,
+            genre: state.genre,
+            length: state.length,
+            artist: { id: state.artist }
+          })],
+          { type: "application/json" }
+      )
+  );
+  if (state.file) {
+    formData.append("file", state.file);
+  }
 
 
   if (song.value) {
-    axios.put("http://localhost:8080/api/songs/" + song.value.id, {
-      "title": state.name,
-      "artist": {
-        "id": state.artist,
-      },
-      "genre": state.genre,
-      "length": state.length,
-    }, {headers: {"Content-Type": "application/json"}}).then((res) => {
+    axios.put("http://localhost:8080/api/songs/" + song.value.id, formData,
+        { headers: { "Content-Type": "multipart/form-data" } })
+        .then((res) => {
       if (res.status === 200) {
         console.log(res.data);
         isSuccessful.value = true;
@@ -109,14 +129,9 @@ async function handleSubmit() {
     });
 
   } else {
-    axios.post("http://localhost:8080/api/songs", {
-      "title": state.name,
-      "artist": {
-        "id": state.artist,
-      },
-      "genre": state.genre,
-      "length": state.length,
-    }, {headers: {"Content-Type": "application/json"}}).then((res) => {
+    axios.post("http://localhost:8080/api/songs", formData,
+        { headers: { "Content-Type": "multipart/form-data" } })
+        .then((res) => {
 
 
       if (res.status === 200) {
@@ -138,6 +153,14 @@ async function handleSubmit() {
   }
 
 }
+
+function onFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files.length > 0) {
+    state.file = input.files[0];
+  }
+}
+
 
 </script>
 <template>
@@ -233,6 +256,22 @@ async function handleSubmit() {
             </span>
           </p>
         </label>
+        <!-- Musikdatei -->
+        <label>
+          Musikdatei (mp3)
+          <input
+              type="file"
+              accept="audio/*"
+              @change="onFileChange"
+
+          />
+
+        </label>
+        <p v-if="song">
+          🎵 Aktuelle Datei bleibt erhalten, wenn keine neue ausgewählt wird
+        </p>
+
+
 
         <!-- Buttons -->
         <button
