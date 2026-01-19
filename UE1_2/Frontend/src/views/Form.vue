@@ -17,7 +17,7 @@ const isSuccessful = ref(false);
 
 const artists = ref<Array<ArtistInterface>>([]);
 const song = ref<SongInterface | undefined>(undefined);
-
+const etag = ref<string | null>(null);
 
 const matchLength = (value: string) =>
     /^[0-9]{1,2}:[0-5][0-9]$/.test(value);
@@ -51,7 +51,10 @@ onMounted(() => {
   if (props.id) {
     axios.get(`http://localhost:8080/api/songs/${props.id}`).then((res) => {
       song.value = res.data;
-      console.log(res.data);
+      etag.value = res.headers['etag'];
+      console.log(etag.value);
+
+      console.log(res.headers);
       console.log(song.value);
 
       if (song.value) {
@@ -110,7 +113,7 @@ async function handleSubmit() {
 
   if (song.value) {
     axios.put("http://localhost:8080/api/songs/" + song.value.id, formData,
-        { headers: { "Content-Type": "multipart/form-data" } })
+        { headers: { "Content-Type": "multipart/form-data", "If-Match": etag.value } })
         .then((res) => {
       if (res.status === 200) {
         console.log(res.data);
@@ -122,9 +125,23 @@ async function handleSubmit() {
           router.push('/');
         }, 500)
 
-      } else {
+      }
+      else if(res.status === 412){
+        alert("⚠️ Der Song wurde inzwischen geändert. Bitte neu laden.");
+        setTimeout(() => {
+          window.location.reload();
+        }, 200)
+      }
+      else {
         isError.value = true;
         alert(res.data);
+      }
+    }).catch(err => {
+      if(err.response.status == 412){
+        alert("⚠️ Der Song wurde inzwischen geändert. Bitte neu laden.");
+        setTimeout(() => {
+          window.location.reload();
+        }, 200)
       }
     });
 
@@ -160,6 +177,7 @@ function onFileChange(event: Event) {
     state.file = input.files[0];
   }
 }
+
 
 
 </script>

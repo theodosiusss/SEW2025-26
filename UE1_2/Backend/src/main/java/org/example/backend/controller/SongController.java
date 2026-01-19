@@ -5,6 +5,7 @@ import org.example.backend.model.Song;
 import org.example.backend.repository.SongAudioProjection;
 import org.example.backend.repository.SongRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,9 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("api/songs")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*",
+        exposedHeaders = "eTag"
+)
 public class SongController {
 
     private final SongRepository repository;
@@ -37,8 +40,16 @@ public class SongController {
     }
 
     @GetMapping("/{id}")
-    public Song getSongById(@PathVariable long id) {
-        return this.repository.findById(id).orElseThrow();
+    public ResponseEntity<Song> getSongById(@PathVariable long id) {
+
+        Song song = repository.findById(id).orElseThrow();
+
+        String etag = "\"song-" + song.getId() + "-v" + song.getVersion() + "\"";
+
+        return ResponseEntity
+                .ok()
+                .eTag(etag)
+                .body(song);
     }
 
     @PostMapping(consumes = "multipart/form-data")
@@ -57,14 +68,23 @@ public class SongController {
     }
 
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
-    public Song changeSong(
+    public ResponseEntity<?> changeSong(
             @PathVariable Long id,
+            @RequestHeader("If-Match") String ifMatch,
             @Valid @RequestPart("song") Song updatedSong,
             @RequestPart(value = "file", required = false) MultipartFile file
     ) throws IOException {
 
         Song existingSong = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Song nicht gefunden"));
+                .orElseThrow();
+
+        String currentEtag = "\"song-" + existingSong.getId() + "-v" + existingSong.getVersion() + "\"";
+
+        if (!currentEtag.equals(ifMatch)) {
+            return ResponseEntity
+                    .status(HttpStatus.PRECONDITION_FAILED)
+                    .body("Resource was modified by another user.");
+        }
 
         existingSong.setTitle(updatedSong.getTitle());
         existingSong.setGenre(updatedSong.getGenre());
@@ -80,8 +100,9 @@ public class SongController {
             existingSong.setMusicDataUrl(dataUrl);
         }
 
-        return repository.save(existingSong);
+        return ResponseEntity.ok(repository.save(existingSong));
     }
+
 
 
     @DeleteMapping("/{id}")
