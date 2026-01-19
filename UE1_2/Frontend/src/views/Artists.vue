@@ -43,16 +43,25 @@ function saveEdit(artist: ArtistInterface) {
       .put(`http://localhost:8080/api/artists/${artist.id}`, {
         id: artist.id,
         name: state.editedName,
-      })
+      }, {headers: {"If-Match": artist.version}})
       .then((res) => {
         artist.name = res.data.name;
+        artist.version = res.data.version;
         editingArtistId.value = null;
-        state.editedName = artist.name; "";
+        state.editedName = "";
+
       })
       .catch((err) => {
         console.error(err);
+        if (err.response.status === 412) {
+          alert("⚠️ Der Artist wurde inzwischen geändert. Bitte neu laden.");
+          setTimeout(() => {
+            window.location.reload();
+          }, 200)
+        }
       });
 }
+
 function cancelEdit() {
   editingArtistId.value = null;
   state.editedName = "";
@@ -224,32 +233,58 @@ a:hover {
 
 /* 💫 Animationen */
 @keyframes bounce {
-  from { transform: translateY(0); }
-  to { transform: translateY(-10px); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes spinny {
-  0% { transform: rotate(0); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes wiggle {
-  0%, 100% { transform: rotate(-1deg); }
-  50% { transform: rotate(1deg); }
+  0%, 100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
 }
 
 @keyframes btnPulse {
-  0%, 100% { transform: scale(1); filter: hue-rotate(0deg); }
-  50% { transform: scale(1.1); filter: hue-rotate(45deg); }
+  0%, 100% {
+    transform: scale(1);
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: hue-rotate(45deg);
+  }
 }
 
 @keyframes linkBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 @keyframes inputWobble {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(1.5deg); }
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
 }
 </style>

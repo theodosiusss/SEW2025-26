@@ -20,6 +20,19 @@ public class Artist {
     @JsonIgnore
     private List<Song> songs;
 
+    @Version
+    private Long version= 0L;
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
+
+
     public void setId(Long id) {
         this.id = id;
     }

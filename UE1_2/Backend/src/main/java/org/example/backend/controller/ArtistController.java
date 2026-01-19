@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.example.backend.model.Artist;
 import org.example.backend.repository.ArtistRepository;
 import org.example.backend.repository.SongRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,11 +34,17 @@ public class ArtistController {
         return this.repository.save(artist);
     }
     @PutMapping("/{id}")
-    public Artist updateArtist(@PathVariable Long id, @Valid @RequestBody Artist artist) {
+    public ResponseEntity<?> updateArtist(@PathVariable Long id, @Valid @RequestBody Artist artist,
+                               @RequestHeader("If-Match") long ifMatch
+                               ) {
         Artist existingArtist = repository.findById(id).orElseThrow();
+        if (existingArtist.getVersion() != ifMatch) {
+            return ResponseEntity
+                    .status(HttpStatus.PRECONDITION_FAILED)
+                    .body("Resource was modified by another user.");
+        }
         existingArtist.setName(artist.getName());
-        return repository.save(existingArtist);
-
+        return ResponseEntity.ok(repository.save(existingArtist));
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteArtist(@PathVariable Long id) {

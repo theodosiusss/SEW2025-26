@@ -9,4 +9,5 @@ export interface SongInterface {
 export interface ArtistInterface {
     id: number;
     name: string;
+    version: string
 }
