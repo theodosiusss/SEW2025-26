@@ -58,7 +58,7 @@ public class SongController {
         song.setId(null);
         String base64 = java.util.Base64.getEncoder()
                 .encodeToString(file.getBytes());
-        String mimeType = file.getContentType(); // z.B. audio/mpeg
+        String mimeType = file.getContentType();
 
         String dataUrl = "data:" + mimeType + ";base64," + base64;
 
