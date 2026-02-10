@@ -36,7 +36,7 @@ public class SongController {
 
     @GetMapping("/search/{search}")
     public Page<Song> searchSong(@PathVariable String search, Pageable pageable) {
-        return this.repository.findByTitleContainingIgnoreCaseOrArtist_NameContainingIgnoreCase(search, search, pageable);
+        return this.repository.search(search, search,search, pageable);
     }
 
     @GetMapping("/{id}")
@@ -87,7 +87,7 @@ public class SongController {
         }
 
         existingSong.setTitle(updatedSong.getTitle());
-        existingSong.setGenre(updatedSong.getGenre());
+        existingSong.setGenres(updatedSong.getGenres());
         existingSong.setLength(updatedSong.getLength());
         existingSong.setArtist(updatedSong.getArtist());
 

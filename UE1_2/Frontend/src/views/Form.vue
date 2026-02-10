@@ -9,6 +9,7 @@ import useVuelidate from "@vuelidate/core";
 const props = defineProps<{ id?: String }>();
 const changeButton = useTemplateRef('changeButton');
 
+const GenreList = ["Pop", "Rock", "Metal", "Country", "Schlager", "Emo", "Brainrot", "Hyperpop", "Rap"]
 
 const isError = ref(false);
 const isSuccessful = ref(false);
@@ -25,7 +26,7 @@ const matchLength = (value: string) =>
 const state = reactive({
   name: '',
   artist: null as number | null,
-  genre: '',
+  genres: [] as string[],
   length: '',
   file: null as File | null
 })
@@ -33,7 +34,7 @@ const state = reactive({
 const rules = {
   name: {required},
   artist: {required},
-  genre: {required},
+  genres: {required},
   length: {required,matchLength}
 }
 const v$ = useVuelidate(rules, state);
@@ -60,7 +61,7 @@ onMounted(() => {
       if (song.value) {
         state.name = song.value.title;
         state.artist = song.value.artist?.id;
-        state.genre = song.value.genre;
+        state.genres = song.value.genres;
         state.length = song.value.length;
       }
     }).catch((err) => {
@@ -99,7 +100,7 @@ async function handleSubmit() {
       new Blob(
           [JSON.stringify({
             title: state.name,
-            genre: state.genre,
+            genres: state.genres,
             length: state.length,
             artist: { id: state.artist }
           })],
@@ -155,7 +156,7 @@ async function handleSubmit() {
         console.log(res.data);
         isSuccessful.value = true;
         state.name = "";
-        state.genre = "";
+        state.genres = [];
         state.length = "";
         state.artist = null;
         v$.value.$reset();
@@ -239,15 +240,18 @@ function onFileChange(event: Event) {
         <!-- Genre -->
         <label>
           Genre
-          <input
+          <select
               required
-              type="text"
-              v-model="state.genre"
+              multiple
+              v-model="state.genres"
               @focus="resetMessages"
-              @blur="v$.genre.$touch"
-              placeholder="z. B. Rock"
-          />
-          <p v-if="v$.genre.$error" class="validation-error">
+              @blur="v$.genres.$touch"
+          >
+            <option disabled :value="null">-- Bitte Genre</option>/
+            <option v-for="genre in GenreList" :value="genre" :key="genre"> {{genre}} </option>
+          </select>
+
+          <p v-if="v$.genres.$error" class="validation-error">
             Genre ist erforderlich.
           </p>
         </label>

@@ -3,7 +3,10 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class Song {
@@ -13,8 +16,12 @@ public class Song {
 
     @NotBlank(message = "Title muss vorhanden sein")
     private String title;
-    @NotBlank(message = "Genre muss vorhanden sein")
-    private String genre;
+
+    @ElementCollection
+    @CollectionTable(name = "song_genres", joinColumns = @JoinColumn(name = "song_id"))
+    @Column(name = "genre")
+    private Set<String> genres = new HashSet<>();
+
     @NotBlank(message = "Länge muss vorhanden sein")
     @Pattern(
             regexp = "^[0-9]{1,2}:[0-5][0-9]$",
@@ -67,14 +74,13 @@ public class Song {
         this.artist = artist;
     }
 
-    public String getGenre() {
-        return genre;
+    public Set<String> getGenres() {
+        return genres;
     }
 
-    public void setGenre(String genre) {
-        this.genre = genre;
+    public void setGenres(Set<String> genres) {
+        this.genres = genres;
     }
-
     public String getLength() {
         return length;
     }

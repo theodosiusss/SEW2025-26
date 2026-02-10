@@ -3,7 +3,7 @@ export interface SongInterface {
     title: string;
     artist: ArtistInterface
     length: string;
-    genre: string;
+    genres: string[];
 }
 
 export interface ArtistInterface {

@@ -8,7 +8,7 @@ import router from "@/router";
 
 const props = defineProps<{ song: SongInterface }>();
 const emit = defineEmits(['deleted'])
-
+console.log(props.song)
 
 
 function deleteSong() {
@@ -32,7 +32,7 @@ function editSong() {
     <h2>{{ song.artist?.name }}</h2>
     <div>
       <p>{{song.length}}</p>
-      <p>{{song.genre}}</p>
+      <p v-for="genre in song.genres" >{{genre}}</p>
     </div>
     <button type="button" @click="deleteSong">delete</button>
     <button type="button" @click="editSong">edit</button>
