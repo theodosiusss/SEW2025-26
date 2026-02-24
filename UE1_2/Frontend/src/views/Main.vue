@@ -3,11 +3,13 @@ import axios from 'axios';
 import {onMounted, ref, watch} from "vue";
 import Song from "@/components/Song.vue";
 import type {SongInterface} from "@/interfaces.ts";
+import {useUserStore} from "@/store/userStore.ts";
 
 const songs = ref<Array<SongInterface>>([]);
 const search = ref("");
 const toggleError = ref(false);
 
+const auth = useUserStore();
 const currentPage = ref(0);
 const maxPage = ref(67);
 const minPage = ref(0);
@@ -72,8 +74,8 @@ watch(currentPage, () => {
 </script>
 
 <template>
-  <RouterLink to="/add">Neue Songs Hinzufügen</RouterLink>
-  <RouterLink to="/artists">Künstler*innen Übersicht</RouterLink>
+  <RouterLink v-if="auth.isLoggedIn" to="/add">Neue Songs Hinzufügen</RouterLink>
+  <RouterLink v-if="auth.isLoggedIn" to="/artists">Künstler*innen Übersicht</RouterLink>
 
   <div>
     <label for="search">Songs Suchen</label>

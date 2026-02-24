@@ -114,7 +114,7 @@ async function handleSubmit() {
 
   if (song.value) {
     axios.put("http://localhost:8080/api/songs/" + song.value.id, formData,
-        { headers: { "Content-Type": "multipart/form-data", "If-Match": etag.value } })
+        { headers: { "Content-Type": "multipart/form-data", "If-Match": etag.value}, withCredentials: true })
         .then((res) => {
       if (res.status === 200) {
         console.log(res.data);
@@ -148,7 +148,7 @@ async function handleSubmit() {
 
   } else {
     axios.post("http://localhost:8080/api/songs", formData,
-        { headers: { "Content-Type": "multipart/form-data" } })
+        { headers: { "Content-Type": "multipart/form-data" }, withCredentials: true })
         .then((res) => {
 
 

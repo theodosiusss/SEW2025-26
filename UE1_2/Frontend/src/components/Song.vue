@@ -3,7 +3,9 @@
 import axios from "axios";
 import type {SongInterface} from "@/interfaces.ts";
 import router from "@/router";
+import {useUserStore} from "@/store/userStore.ts";
 
+const auth = useUserStore();
 
 
 const props = defineProps<{ song: SongInterface }>();
@@ -13,7 +15,7 @@ console.log(props.song)
 
 function deleteSong() {
   if(props.song)
-  axios.delete('http://localhost:8080/api/songs/' + props.song.id)
+  axios.delete('http://localhost:8080/api/songs/' + props.song.id,{withCredentials: true})
   .then(res => {
     if(res.status === 204) {
       emit("deleted")
@@ -34,8 +36,8 @@ function editSong() {
       <p>{{song.length}}</p>
       <p v-for="genre in song.genres" >{{genre}}</p>
     </div>
-    <button type="button" @click="deleteSong">delete</button>
-    <button type="button" @click="editSong">edit</button>
+    <button v-if="auth.isLoggedIn" type="button" @click="deleteSong">delete</button>
+    <button v-if="auth.isLoggedIn" type="button" @click="editSong">edit</button>
 
   </div>
 </template>
