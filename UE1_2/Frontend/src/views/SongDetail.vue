@@ -22,6 +22,7 @@ onMounted(async () => {
 
     <!-- Artist -->
     <h2 class="artist-name">🎤 {{ song.artist?.name }}</h2>
+    <h3 class="artist-name">Owner:  {{ song.user?.username }}</h3>
 
     <!-- Meta Infos -->
     <div class="meta-chaos">

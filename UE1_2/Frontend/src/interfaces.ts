@@ -4,6 +4,9 @@ export interface SongInterface {
     artist: ArtistInterface
     length: string;
     genres: string[];
+    user: {
+        username: string;
+    }
 }
 
 export interface ArtistInterface {

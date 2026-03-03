@@ -30,8 +30,8 @@ public class DataLoader implements CommandLineRunner {
                     user.setPassword(hash); // reset to known demo password
                     benutzerRepository.save(user);
                 }, () -> benutzerRepository.save(new User(username, hash)));
-        Optional<User> sigma = benutzerRepository.findByUsername("sigma");
-        sigma.ifPresent(benutzerRepository::delete);
-        benutzerRepository.save(new User("sigma",encoder.encode("sigma")));
+     //   Optional<User> sigma = benutzerRepository.findByUsername("sigma");
+    //    sigma.ifPresent(benutzerRepository::delete);
+      //  benutzerRepository.save(new User("sigma",encoder.encode("sigma")));
     }
 }

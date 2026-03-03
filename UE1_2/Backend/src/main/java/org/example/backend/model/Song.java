@@ -32,6 +32,9 @@ public class Song {
     @ManyToOne (fetch = FetchType.EAGER)
     private Artist artist;
 
+    @ManyToOne (fetch = FetchType.EAGER)
+    private User user;
+
 
     @Lob
     @Column(columnDefinition = "LONGTEXT")
@@ -97,4 +100,11 @@ public class Song {
         this.musicDataUrl = musicDataUrl;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

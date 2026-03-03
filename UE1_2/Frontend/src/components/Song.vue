@@ -32,6 +32,7 @@ function editSong() {
   <div class="song">
     <h1 @click="router.push('song-detail/'+song.id)">{{ song.title }}</h1>
     <h2>{{ song.artist?.name }}</h2>
+    <h3>Owner: {{ song.user?.username }}</h3>
     <div>
       <p>{{song.length}}</p>
       <p v-for="genre in song.genres" >{{genre}}</p>
