@@ -20,6 +20,11 @@ function deleteSong() {
     if(res.status === 204) {
       emit("deleted")
     }
+
+  }).catch(err => {
+    if(err.status === 403) {
+      alert("Du bist nicht der Besitzer");
+    }
   })
 }
 

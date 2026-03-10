@@ -2,15 +2,21 @@ package org.example.backend.controller;
 
 import jakarta.validation.Valid;
 import org.example.backend.model.Song;
+import org.example.backend.model.User;
 import org.example.backend.repository.SongAudioProjection;
 import org.example.backend.repository.SongRepository;
+import org.example.backend.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,9 +30,11 @@ import java.util.Optional;
 public class SongController {
 
     private final SongRepository repository;
+    private final UserRepository userRepository;
 
-    public SongController(SongRepository songRepository) {
+    public SongController(SongRepository songRepository, UserRepository userRepository) {
         this.repository = songRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -36,7 +44,7 @@ public class SongController {
 
     @GetMapping("/search/{search}")
     public Page<Song> searchSong(@PathVariable String search, Pageable pageable) {
-        return this.repository.search(search, search,search, pageable);
+        return this.repository.search(search, search, search, pageable);
     }
 
     @GetMapping("/{id}")
@@ -56,6 +64,10 @@ public class SongController {
     public Song addSong(@Valid @RequestPart("song") Song song,
                         @RequestPart("file") MultipartFile file) throws IOException {
         song.setId(null);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByUsername(auth.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+
+
         String base64 = java.util.Base64.getEncoder()
                 .encodeToString(file.getBytes());
         String mimeType = file.getContentType();
@@ -64,9 +76,11 @@ public class SongController {
 
         song.setMusicDataUrl(dataUrl);
 
+        song.setUser(user);
         return this.repository.save(song);
     }
 
+    @PreAuthorize("@songSecurity.isOwner(#id, authentication.name)")
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     public ResponseEntity<?> changeSong(
             @PathVariable Long id,
@@ -104,15 +118,17 @@ public class SongController {
     }
 
 
-
+    @PreAuthorize("@songSecurity.isOwner(#id, authentication.name)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSong(@PathVariable Long id) {
+
         if (!repository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
         repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
     @GetMapping("/{id}/audio")
     public ResponseEntity<byte[]> getSongAudio(@PathVariable Long id) {
 
@@ -122,14 +138,13 @@ public class SongController {
         String dataUrl = projection.getMusicDataUrl();
         String base64 = dataUrl.substring(dataUrl.indexOf(",") + 1);
         byte[] audioBytes = java.util.Base64.getDecoder().decode(base64);
-        String mimeType = dataUrl.substring(dataUrl.indexOf(':')+1, dataUrl.indexOf(";")); // "audio/mpeg"
+        String mimeType = dataUrl.substring(dataUrl.indexOf(':') + 1, dataUrl.indexOf(";")); // "audio/mpeg"
 
 
         return ResponseEntity.ok()
                 .header("Content-Type", mimeType)
                 .body(audioBytes);
     }
-
 
 
 }

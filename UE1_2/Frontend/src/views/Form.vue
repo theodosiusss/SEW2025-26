@@ -144,6 +144,11 @@ async function handleSubmit() {
           window.location.reload();
         }, 200)
       }
+
+      if(err.response.status == 403){
+        alert("Du bist nicht der Besitzer*in mein/e Liebe/r");
+
+      }
     });
 
   } else {
